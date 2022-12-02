@@ -1,0 +1,85 @@
+BLKH is a program for solving the Bottleneck Traveling Salesman Problem (BTSP)
+and the Maximum Scattered traveling Salesman problem (MSTSP).
+
+The code is distributed for research use. The author reserves all rights to the
+code.
+
+INSTRUCTIONS FOR INSTALLATION: (Version 1.1 - February 2021)
+
+The software is available in gzipped tar format:
+
+    BLKH-1.1.tgz        (approximately 1 MB)
+
+Download the software and execute the following UNIX commands:
+
+    tar xvfz BLKH-1.1.tgz
+    cd BLKH-1.1 
+    make _O
+
+Five executable files called BLKH, BLKH_EXP, MBLKH, MBLKH_EXP, and LKH will now
+be available in the directory BLKH-1.1. LKH is an executable of LKH-2.0.9.
+
+More efficient executables of BLKH and BLKH_EXP are obtained by executing the
+UNIX command: 
+
+    make _R
+
+BLKH is used for solving a given BSTP instance once, whereas BLKH_EXP is used
+for solving a BTSP instance using a specified number of independent runs,
+default is 10. 
+
+MBLKH and MBLKH_EXP are the corresponding executables for solving MSTSP
+instances.
+
+To ease the running of BLKH and BLKH_EXP, four scripts, runBLKH, runBLKH_ASYM, 
+runBLKH_EXP, and runBLKH_ASYM_EXP, are provided. They create suitable parameter
+files and execute BLKH or BLKH_EXP. Scripts with denotation ASYM are used for
+asymmetric instances.
+
+Similarly, to ease the running of MBLKH and MBLKH_EXP, four scripts, runMBLKH,
+runMBLKH_ASYM, runMBLKH_EXP_ASYM, and runMBLKH_ASYM_EXP, are provided.
+
+In order to ease solution of a specified subset of instances, the following
+scripts are provided:
+    
+    runAMAT, runATSPLIB, runBALAS, runCOIN, runCRANE, runDISK, runHARD, 
+    runJM, runMSTSP, runNATIONAL, runRAN, runRECT, runRTILT, runSHOP, 
+    runSMAT, runSTILT, runSUPER, runTEST, runTMAT, runTSMAT, runTSPLIB,
+    runUK66+US1097, runVERY_LARGE, runVLSI
+
+It is recommended to run the script runTEST in order to
+test the installation:
+
+    ./runTEST
+
+The runBLKH script may be used for solving other instances. Just change 
+the value of PROBLEM_FILE in the script. 
+
+The BLKH-1.0 directory contains the following subdirectories:
+
+  TSP_INSTANCES:  Library of symmetric benchmark instances.
+                  The files (418 MB) can be downloaded from 
+
+      http://www.akira.ruc.dk/~keld/research/BLKH/TSP_INSTANCES.tgz
+
+  ATSP_INSTANCES: Library of asymmetric benchmark instances.
+                  The files (478 MB) can be downloaded from 
+
+      http://www.akira.ruc.dk/~keld/research/BLKH/ATSP_INSTANCES.tgz
+
+  SRC:             Source code of BLKH.
+
+  LKH-2.0.7:       Source code of the current version of LKH.
+
+  TMP:             Temporary files used during the solution process.
+
+CHANGES IN VERSION 1.1:
+----------------------
+
+LKH-2.0.9 is used instead of LKH-2.0.7. This makes POPMUSIC candidate edge
+generation and GPX2 recombination available.
+
+VERSION 1.0:
+-----------
+
+Created April 2014.
