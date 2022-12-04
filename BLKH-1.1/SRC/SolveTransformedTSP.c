@@ -1,5 +1,5 @@
 #include "BLKH.h"
-#include "Heap.h"
+#include "BLKHHeap.h"
 #include <unistd.h>
 
 extern int BLKHHeapCount, BLKHHeapCapacity;
@@ -114,9 +114,9 @@ int SolveTransformedTSP(int Low, int High, int *Tour, GainType * Cost, const cha
                 BLKHHeapCount = 0;
                 BLKHHeapCapacity = MaxCands;
                 for (To = Top; To; To = To->Prev)
-                    HeapInsert(To);
+                    BLKHHeapInsert(To);
                 for (j = 1; j <= MaxCands; j++)
-                    fprintf(CandFile, "%d 0 ", Heap[j]->Id);
+                    fprintf(CandFile, "%d 0 ", BLKHHeap[j]->Id);
             }
             fprintf(CandFile, "\n");
         }
