@@ -8,7 +8,7 @@
  * structures except nodes and candidates.
  */
 
-#define Free(s) { free(s); s = 0; }
+#define Free(s) { if (s) free(s); s = 0; }
 
 void AllocateStructures()
 {

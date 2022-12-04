@@ -91,7 +91,7 @@ int SolveTransformedTSP(int Low, int High, int *Tour, GainType * Cost, const cha
 
     if (High == INT_MAX) {
         /* Create candidate file */
-        MakeHeap(MaxCands);
+        BLKHMakeHeap(MaxCands);
         sprintf(CandFileName, "%s.cand", Prefix);
         assert(CandFile = fopen(CandFileName, "w"));
         fprintf(CandFile, "%d\n", Dimension);
@@ -120,7 +120,7 @@ int SolveTransformedTSP(int Low, int High, int *Tour, GainType * Cost, const cha
             }
             fprintf(CandFile, "\n");
         }
-        free(Heap);
+        free(BLKHHeap);
         fclose(CandFile);
     }
 

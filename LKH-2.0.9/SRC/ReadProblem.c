@@ -441,8 +441,9 @@ static int ThreeDWeightType()
 
 static void CheckSpecificationPart()
 {
-    if (ProblemType == -1)
-        eprintf("TYPE is missing");
+    if (ProblemType == -1) {
+        eprintf("In LKH: TYPE is missing");
+    }
     if (Dimension < 3)
         eprintf("DIMENSION < 3 or not specified");
     if (WeightType == -1 && ProblemType != ATSP && ProblemType != HCP &&

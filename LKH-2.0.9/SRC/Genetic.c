@@ -59,7 +59,7 @@ void ApplyCrossover(int i, int j)
     Crossover();
 }
 
-#define Free(s) { free(s); s = 0; }
+#define Free(s) { if (s) free(s); s = 0; }
 
 /*
  * The FreePopulation function frees the memory space allocated to the 

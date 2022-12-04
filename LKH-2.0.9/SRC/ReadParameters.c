@@ -933,7 +933,7 @@ void ReadParameters()
                 eprintf("TIME_LIMIT: >= 0 expected");
         } else if (!strcmp(Keyword, "TOUR_FILE")) {
             if (!(TourFileName = GetFileName(0)))
-                eprintf("TOUR_FILE: string expected");
+                eprintf("In LKH: TOUR_FILE: string expected");
         } else if (!strcmp(Keyword, "TRACE_LEVEL")) {
             if (!(Token = strtok(0, Delimiters)) ||
                 !sscanf(Token, "%d", &TraceLevel))

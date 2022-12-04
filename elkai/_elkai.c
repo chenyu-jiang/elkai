@@ -1,4 +1,5 @@
 #include <Python.h>
+#include "BLKH.h"
 #include "LKH.h"
 #include "Genetic.h"
 #include "math.h"
@@ -12,26 +13,48 @@
 // - Make sure camel case is used everywhere
 // - Use git submodule instead of a LKH copy
 
-static int InvokeSolver(int *matrixBuff, int matrixLen, int runCount, int *tourBuff, int *tourN);
+enum TSPType {
+    kTSP = 0,
+    kBottleneckTSP = 1,
+};
+
+static int InvokeLKHSolver(int *matrixBuff, int matrixLen, int runCount, int *tourBuff, int *tourN, int traceLevel);
+static int InvokeBLKHSolver(int *matrixBuff, int matrixLen, int runCount, int *tourBuff, int *tourN, int traceLevel, const char* lkhExecPath);
 
 static PyObject *ElkSolve(PyObject *self, PyObject *args)
 {
     // *args of a vararg Python function is a tuple
     // of unknown length.
 
-    if(PyObject_Length(args) != 2) {
-        PyErr_SetString(PyExc_TypeError, "Expected two arguments");
+    if(PyObject_Length(args) <= 4) {
+        PyErr_SetString(PyExc_TypeError, "Expected at least four arguments");
         return 0;
     }
 
     PyObject *arg = PyObject_GetItem(args, PyLong_FromLong(0));
     PyObject *runArg = PyObject_GetItem(args, PyLong_FromLong(1));
+    PyObject *typeArg = PyObject_GetItem(args, PyLong_FromLong(2));
+
+
+    int traceLevel = 0;
+    PyObject *traceLevelArg = PyObject_GetItem(args, PyLong_FromLong(3));
+    traceLevel = PyLong_AsLong(traceLevelArg);
+    if(PyErr_Occurred() != 0 || traceLevel < 0) {
+        PyErr_SetString(PyExc_TypeError, "Trace level must be a nonnegative int");
+        return 0;
+    }
 
     long runCount = PyLong_AsLong(runArg);
     if(PyErr_Occurred() != 0 || runCount <= 0) {
         PyErr_SetString(PyExc_TypeError, "Second argument must be a positive int");
         return 0;
-    } 
+    }
+
+    long tspType = PyLong_AsLong(typeArg);
+    if(PyErr_Occurred() != 0 || tspType < 0 || tspType > 1) {
+        PyErr_SetString(PyExc_TypeError, "Third argument must be 0 or 1");
+        return 0;
+    }
 
     int pyLen = PyObject_Length(arg);
 
@@ -62,7 +85,22 @@ static PyObject *ElkSolve(PyObject *self, PyObject *args)
         // TODO: don't lose precision
         matrixBuff[i] = justNumber_i;
     }
-    int norm_result = InvokeSolver(matrixBuff, pyLen, runCount, tourBuff, &tourN);
+    if (tspType == kTSP) {
+        InvokeLKHSolver(matrixBuff, pyLen, runCount, tourBuff, &tourN, traceLevel);
+    } else if (tspType == kBottleneckTSP) {
+        // BLKH solver needs to call LKH executable... so we need to provide its path
+        if(PyObject_Length(args) < 5) {
+            PyErr_SetString(PyExc_TypeError, "LKH exec path must be provided for bottleneck TSP");
+            return 0;
+        }
+        PyObject *lkhExecArg = PyObject_GetItem(args, PyLong_FromLong(4));
+        const char *path = PyUnicode_AsUTF8(lkhExecArg);
+        if(PyErr_Occurred() != 0) {
+            PyErr_SetString(PyExc_TypeError, "Failed to retrieve LKH exec path");
+            return 0;
+        }
+        InvokeBLKHSolver(matrixBuff, pyLen, runCount, tourBuff, &tourN, traceLevel, path);
+    }
     free(matrixBuff);
     PyObject *list = PyList_New(tourN);
     for (i = 0; i < tourN; i++)
@@ -140,7 +178,8 @@ static void CreateNodes()
         if (Dimension > MaxMatrixDimension)
             eprintf("Dimension too large in HPP problem");
     }
-    assert(NodeSet = (Node *)calloc(Dimension + 1, sizeof(Node)));
+    assert(NodeSet = (Node *)calloc(Dimension + 2, sizeof(Node)));
+    NodeSet[Dimension + 1].Id = Dimension + 1;
     for (i = 1; i <= Dimension; i++, Prev = N)
     {
         N = &NodeSet[i];
@@ -243,7 +282,18 @@ static void SetParameters(int runCount)
     // Set up actual values
     Runs = runCount;
     Precision = 50;
-    TourFileName = "";
+    TourFileName = NULL;
+}
+
+static char *Copy(char *S)
+{
+    char *Buffer;
+
+    if (!S || strlen(S) == 0)
+        return 0;
+    assert(Buffer = (char *) malloc(strlen(S) + 1));
+    strcpy(Buffer, S);
+    return Buffer;
 }
 
 void _elk_ReadProblem(int *myMatrix, int matrixLen)
@@ -266,6 +316,8 @@ void _elk_ReadProblem(int *myMatrix, int matrixLen)
     // Future elkai may allow different problem types, or
     // different weight formats.
 
+    Name = Copy("Unnamed");
+    Type = Copy("ATSP");
     ProblemType = ATSP;
     Dimension = (int)sqrt(matrixLen);
     DimensionSaved = Dimension;
@@ -483,7 +535,7 @@ void _Reset8();
 
 // InvokeSolver reads the matrix buffer and outputs it into tourBuff and updates
 // tourN which is the tour length.
-static int InvokeSolver(int *matrixBuff, int matrixLen, int runCount, int *tourBuff, int *tourN)
+static int InvokeLKHSolver(int *matrixBuff, int matrixLen, int runCount, int *tourBuff, int *tourN, int traceLevel)
 {
     _Reset1();
     _Reset2();
@@ -628,4 +680,104 @@ static int InvokeSolver(int *matrixBuff, int matrixLen, int runCount, int *tourB
     }
     ParseTour(tourN, tourBuff, BestTour);
     return Norm;
+}
+
+static int InvokeBLKHSolver(int *matrixBuff, int matrixLen, int runCount, int *tourBuff, int *tourN, int traceLevel, const char* lkhExecPath)
+{
+    _Reset1();
+    _Reset2();
+    _Reset3();
+    _Reset4();
+    _Reset5();
+    _Reset6();
+    _Reset7();
+    _Reset8();
+
+    GainType Bottleneck, BestBottleneck, BottleneckSum = 0;
+    int Bound, LowerBound, Opt = 0;
+    double Time, LastTime, LBTime;
+    SetParameters(runCount);
+    LastTime = GetTime();
+    MaxMatrixDimension = 20000;
+    MergeWithTour = Recombination == IPT ? MergeWithTourIPT : MergeWithTourGPX2;
+
+    _elk_ReadProblem(matrixBuff, matrixLen);
+    TraceLevel = traceLevel;
+    CandidateFiles = 0;
+    PiFileName = 0;
+    EdgeFiles = 0;
+    AllocateStructures();
+
+    LowerBound = TwoMax();
+    if ((Bound = BBSSP(LowerBound)) > LowerBound) {
+        LowerBound = Bound;
+    }
+    if (ProblemType == ATSP) {
+        if ((Bound = BBSSPA(LowerBound)) > LowerBound) {
+            LowerBound = Bound;
+        }
+        if ((Bound = BSCSSP(LowerBound)) > LowerBound) {
+            LowerBound = Bound;
+        }
+        if ((Bound = BAP(LowerBound)) > LowerBound) {
+            LowerBound = Bound;
+        }
+    }
+    LBTime = Time = fabs(GetTime() - LastTime);
+    if (TraceLevel > 0) {
+        printff("Lower bound = %d, Time = %0.2f sec.\n", LowerBound, Time);
+    }
+    assert(BestTour = (int *) malloc((DimensionSaved + 1) * sizeof(int)));
+    BestBottleneck = PLUS_INFINITY;
+    int Exp;
+    for (Exp = 1; Exp <= runCount; Exp++, Seed++) {
+        Bottleneck = SolveBTSP(LowerBound, lkhExecPath);
+        if (OutputTourFileName) {
+            int OldTraceLevel = TraceLevel;
+            TraceLevel = 1;
+            WriteTour(OutputTourFileName, BestTour, BestCost);
+            TraceLevel = OldTraceLevel;
+        }
+        if (TourFileName &&
+            (Optimum == MINUS_INFINITY || Bottleneck < BestBottleneck)) {
+            int OldTraceLevel = TraceLevel;
+            TraceLevel = 1;
+            WriteTour(TourFileName, BestTour, BestCost);
+            TraceLevel = OldTraceLevel;
+        }
+        if (Bottleneck < BestBottleneck) {
+            BestBottleneck = Bottleneck;
+        }
+        if (TraceLevel > 0)
+            printff("* Performed %d out of %d experiments\n\n",
+                    Exp, runCount);
+        BottleneckSum += Bottleneck;
+        if (Bottleneck == Optimum)
+            Opt++;
+        else if (Bottleneck < Optimum) {
+            Optimum = Bottleneck;
+            Opt = 1;
+        }
+    }
+    Time = GetTimeUsage(RUSAGE_SELF) + GetTimeUsage(RUSAGE_CHILDREN);
+    Time += (runCount - 1) * LBTime;
+    ParseTour(tourN, tourBuff, BestTour);
+    if (TraceLevel > 0) {
+        if (Optimum != MINUS_INFINITY)
+            printff
+                ("Opt = " GainFormat ", Best = " GainFormat ", "
+                "Avg. = %0.1f, Error = %0.2f%%\n"
+                "Opt = %0.0f%%, Time = %0.2fs\n\n",
+                Optimum, BestBottleneck, (double) BottleneckSum / runCount,
+                ((double) BottleneckSum / runCount -
+                Optimum) / Optimum * 100.0, Opt * 100.0 / runCount,
+                Time / runCount);
+        else
+            printff
+                ("Best = " GainFormat ", "
+                "Avg. = %0.1f, Time = %0.2fs\n\n",
+                BestBottleneck, (double) BottleneckSum / runCount,
+                Time / runCount);
+    }
+    return BestBottleneck;
 }

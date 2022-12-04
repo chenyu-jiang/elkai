@@ -6,7 +6,7 @@
  * The FreeStructures function frees all allocated structures.
  */
 
-#define Free(s) { free(s); s = 0; }
+#define Free(s) { if (s) free(s); s = 0; }
 
 void FreeStructures()
 {

@@ -1,6 +1,9 @@
 from ._elkai import solve
 import struct
+import os
 
+LKH_PATH = os.path.join(os.path.split(__file__)[0], "LKH_EXEC")
+assert os.path.isfile(LKH_PATH), "LKH executable not found."
 
 def float_to_int(x):
     """Converts a float into some unknown integer such that
@@ -29,12 +32,11 @@ def flatten_matrix(mat, mat_type=int):
             flattened.append(mat_type(column))
     return flattened
 
-
-def solve_int_matrix(matrix, runs=10):
+def solve_int_matrix(matrix, runs=10, bottleneck=False, tracelevel=0):
     flat_mat = flatten_matrix(matrix)
-    return solve(flat_mat, runs)
+    return solve(flat_mat, runs, 1 if bottleneck else 0, tracelevel, LKH_PATH)
 
 
-def solve_float_matrix(matrix, runs=10):
+def solve_float_matrix(matrix, runs=10, bottleneck=False, tracelevel=0):
     flat_mat = [float_to_int(float(x)) for x in flatten_matrix(matrix, mat_type=float)]
-    return solve(flat_mat, runs)
+    return solve(flat_mat, runs, 1 if bottleneck else 0, tracelevel, LKH_PATH)
