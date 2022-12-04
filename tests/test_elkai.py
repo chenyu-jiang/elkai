@@ -92,8 +92,4 @@ def test_asymmetric(bottleneck):
         assert tour_length == 53
 
 if __name__ == "__main__":
-    # pytest.main([__file__])
-    test_symmetric(bottleneck=False)
-    test_symmetric(bottleneck=True)
-    test_asymmetric(bottleneck=False)
-    test_asymmetric(bottleneck=True)
+    pytest.main([__file__])
